@@ -1,0 +1,126 @@
+body {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  overflow: hidden;
+  background-color: salmon;
+  background: url('Mount-Hallwill-Norway-Spitsbergen-20180120-tiny.jpg') no-repeat center;
+  background-size: cover;
+  font-size: 16px;
+}
+
+body::after {
+  content: 'Foto: "Mount Hallwill" \A av Ethan Welty - Aurora Photos';
+  font-size: .8em;
+  text-align: right;
+  position: absolute;
+  bottom: 1em;
+  right: 1em;
+}
+
+.skjema, .godkjent, input {
+  border: 1px solid lightgrey;
+  border-radius: 3px;
+  font-size: 1em;
+  display: block;
+  width: 9em;
+  padding: .3em;
+  margin: .3em auto;
+  z-index: 1;
+}
+
+.skjema, .godkjent {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  width: unset;
+  padding: 1.5em;
+  background: white;
+  border: none;
+  box-shadow: 0 2px 6px #00000033;
+}
+
+.skjema::before, .skjema::after {
+  color: #444;
+  display: block;
+  text-align: center;
+}
+
+.skjema::before {
+  content:'Skjema:';
+  font-size: 1.33em;
+  margin-bottom: .6em;
+}
+
+.skjema::after {
+  content:'Obs: Ikke bruk personlige\Apassord på denne siden!';
+  white-space: pre;
+  font-size: .8em;
+  font-style: italic;
+  margin-top: 2em;
+}
+
+.invalid, input:invalid {
+  border: 1px solid #F55;
+  box-shadow: 0 0 3px #F55;
+}
+
+img {
+  margin-top: 1.5em;
+}
+
+.background {
+  margin: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  object-fit: cover;
+  opacity: 1;
+}
+
+.blur-in {
+  -webkit-animation: blur-in 1s ease-out;
+}
+
+.slide-in {
+  -webkit-animation: slide-in .5s cubic-bezier(0.500, -0.440, 0.670, 1.475);;
+}
+
+.slide-out {
+  opacity: 0;
+  -webkit-animation: slide-out .5s ease-out;
+}
+
+.shake {
+  -webkit-animation: shake .18s infinite ease;
+}
+
+@-webkit-keyframes slide-in {
+  0%   { opacity: 0; transform: translateY(60px); }
+  100% { opacity: 1; transform: translateY(0px);  }
+}
+
+@-webkit-keyframes slide-out {
+  from { opacity: 1; transform: translateY(0px);   }
+  to   { opacity: 0; transform: translateY(-60px); }
+}
+
+@-webkit-keyframes shake {
+  0%   { transform: translateX(-2px); }
+  50%  { transform: translateX(2px);  }
+  100% { transform: translateX(-2px); }
+}
+
+@-webkit-keyframes blur-in {
+  0%    { opacity: 0; filter: blur(5px); }
+  50%   { opacity: 1; filter: blur(5px); }
+  100%  { opacity: 1; filter: blur(0);   }
+}
+
+@-webkit-keyframes rainbow {
+
+}

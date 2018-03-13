@@ -1,0 +1,93 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Fira Sans", sans-serif;
+  font-size: 16px;
+  background: #e3e3e3;
+}
+
+form, div {
+  width: 14em;
+  padding: 2em;
+  background: white;
+  position: absolute;
+  top: 30%;
+  left: calc(50% - 7.5em);
+  box-shadow: 0 5px 10px #00000022;
+}
+
+#out {
+  top:70%;
+}
+
+.hidden {
+  display: none;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 1em;
+}
+
+input, input:empty, a {
+  width: 10em;
+
+  color: #777;
+  font-size: 1em;
+  text-align: center;
+  text-decoration: none;
+
+  background: #e3e3e3;
+  border: 3px solid #e3e3e3;
+  border-radius: .2em;
+  padding: .2em;
+  margin: .5em auto;
+
+  float:left;
+  clear: both;
+}
+
+input:focus {
+  background: white;
+}
+
+input:invalid {
+  border-color: red;
+}
+
+input:focus, input:invalid:focus {
+  border-color: #e3e3e3;
+}
+
+input:not([value=""]) {
+  border-color: #e3e3e3;
+}
+
+input:valid:focus {
+  border-color: #3C1;
+}
+
+input:-moz-ui-invalid {
+  box-shadow: none;
+}
+
+a.formvalidated:hover {
+  background: #3C1;
+  border-color: #3C1;
+  color: #040;
+  cursor: pointer;
+}
+
+a.formvalidated:active {
+  background: #090;
+  border-color: #090;
+}
+
+a.formvalidated::after {
+  content:'x';
+  font-size: 1em;
+}

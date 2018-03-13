@@ -1,0 +1,161 @@
+* { margin:0; padding:0; }
+
+body {
+  background-color: #e3e3e3;
+  font-size: 18px;
+}
+
+.main {
+  display: grid;
+  grid-template-columns:
+    [full-start] minmax(1em, 1fr)
+    [main-start] minmax(0, 40em)
+    [main-end] minmax(1em, 1fr)
+    [full-end];
+  width: 100%;
+  background: white;
+}
+
+.main > * {
+  grid-column: main;
+  background-color: white;
+  padding: 1em;
+}
+
+.main > .splash {
+  grid-column: full;
+  background-color: #ccc;
+  padding: 0;
+}
+
+.extended {
+  display: none;
+}
+
+@media only screen and (min-width: 720px) {
+  body {
+    font-size: calc(14px + 0.4vw);
+  }
+  .main {
+    background: unset;
+  }
+  .extended {
+    display: initial;
+  }
+}
+
+p, h1, h2 {
+  font-family: "Fira Sans", sans-serif;
+  line-height: 1.3em;
+}
+
+h1, h2 {
+  color: #C11;
+}
+
+h1 {
+  text-align: center;
+}
+
+h1::after {
+  content:'';
+  display: block;
+  width: 2em;
+  height: .15em;
+  margin: .5em auto;
+  background-color: #C11;
+}
+
+h2 {
+  font-size: 1.3em;
+}
+
+p {
+  color: #777;
+}
+
+figure > img {
+  display: block;
+  min-height: 75vh;
+  min-width: 100%;
+  height: auto;
+  position: absolute;
+  right: 50%;
+  transform: translateX(50%);
+}
+
+figure.splash {
+  position: relative;
+  overflow: hidden;
+  height: 75vh;
+}
+
+figcaption {
+  font-size: .7em;
+  position: absolute;
+  bottom:0;
+  right: 0;
+  padding: .3em .6em;
+  color: #666;
+  background-color: #e3e3e3;
+}
+
+figure > h1 {
+  color: white;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.module {
+  display: block;
+  padding-bottom: 5em;
+  background: white;
+  background:
+    linear-gradient(to right, #FFFFFFFF, #FFFFFF00, #FFFFFFFF),
+    linear-gradient(#EEE, white 2em);
+}
+
+.module:target {
+  display: block;
+}
+
+.module::before {
+  content: '';
+  display: block;
+  background-color: lightgrey;
+  background: linear-gradient(to right, white, #e3e3e3, white);
+  height: .1em;
+  margin-top: -1em;
+  margin-bottom: 2em;
+}
+
+.flex {
+  display: flex;
+  justify-content: center;
+}
+
+.button {
+  display: block;
+  color: white;
+  font-size: .8em;
+  text-align: center;
+  text-decoration: none;;
+  padding: .4em;
+  margin: 0 .4em;
+  background-color: #C11;
+  box-shadow: 0 2px 3px #00000066
+}
+
+.button:hover {
+  background-color: #F44;
+  box-shadow: 0 2px 8px #00000066;
+}
+
+.button:active {
+  background-color: #A00;
+  box-shadow: 0 1px 6px #00000066;
+  position: relative;
+  top: 1px;
+}

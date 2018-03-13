@@ -1,0 +1,204 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+*::-moz-selection { background: #00B9F2; }
+*::selection { background: #00B9F2; }
+
+body {
+  background: #e3e3e3;
+  color: #222;
+  font-family: 'Fira-sans', sans-serif;
+  font-size: calc(10px + .4vw);
+}
+
+header {
+  background-color: white;
+  height: 6em;
+  margin-bottom: 2em;
+  text-align: center;
+}
+
+header > p {
+  margin: 1em 0;
+}
+
+.header-top {
+  background-color: #222;
+  height: 3em;
+}
+
+.logo {
+  background-color: #00B9F2;
+  height: 100%;
+  width: 8em;
+  color: white;
+  padding: 1em;
+}
+
+.main-col {
+  display: flex;
+  flex-direction: column;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.module-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin: .5em 0;
+}
+
+.module-wrap > a {
+  color: #222;
+  width: 100%;
+  text-decoration: none;
+}
+
+.module-wrap > a:hover {
+  color: #222;
+  text-decoration: underline;
+}
+
+.module {
+  display: flex;
+  flex-direction: row;
+  margin: .25em 0;
+}
+
+.module.full {
+  flex-direction: column;
+}
+
+.inner-text {
+  padding: .5em;
+  background: white;
+  width: 100%;
+  align-self: center;
+  box-shadow: 0 1px .2em #00000033;
+}
+
+img {
+  flex-grow:1;
+  object-fit: cover;
+  display: block;
+}
+
+.full > img {
+  min-width: 100%;
+  max-height: 50vw;
+}
+.full > .inner-text {
+  align-self: flex-start;
+  font-size: 1.6em;
+}
+
+.magasin {
+  height: calc(100% - 2em);
+}
+
+.magasin > .inner-text {
+  width: calc(100% - 2em);
+  height: calc(100% + 2em);
+  position: relative;
+  top: -2em;
+  text-align: center;
+  align-self: center;
+}
+
+.blackbox {
+  background-color: #222;
+  color: white !important;
+  width: 100%;
+  padding: .5em;
+}
+
+.live {
+  background-color: #e51c30;
+  width: 2em;
+  height: 2em;
+  border-radius: 1em;
+}
+
+.live-dot {
+  background-color: white;
+  position: absolute;
+  -webkit-animation: live 4s infinite ease-out;
+}
+
+.delayed-animation {
+  -webkit-animation-delay: 1s;
+}
+
+@-webkit-keyframes live {
+  from {
+    transform: scale(0);
+    opacity: 1;
+  }
+
+  to {
+    transform: scale(100%);
+    opacity: 0;
+  }
+}
+
+footer {
+  height: 15em;
+  padding: 2em;
+  text-align: center;
+  margin-top: 4em;
+  background: #222;
+  color: white;
+}
+
+@media only screen and (min-width:600px) {
+  .module-wrap {
+    flex-direction: row;
+  }
+
+  .module {
+    flex-direction: column;
+    margin: 0 .5em;
+  }
+
+  .themed {
+    display: block;
+    background-color: white;
+    padding: 0 2em .5em;
+    border-left: .8em solid #00B9F2;
+    box-shadow: 0 1px .2em #AAA;
+  }
+
+  .themed .module {
+    margin: 0 .1em;
+  }
+
+  .themed .inner-text {
+    box-shadow: none;
+  }
+
+  .themed-title {
+    text-transform: uppercase;
+    font-size: 1.6em;
+    margin: .5em;
+  }
+
+  img {
+    width: 100%;
+    max-height: none;
+  }
+
+  .inner-text {
+    align-self: auto;
+  }
+
+  .large {
+    flex-shrink: 2;
+  }
+
+  .medium {
+    flex-shrink: 3;
+  }
+
+  .small {
+    flex-shrink: 5;
+  }
+}

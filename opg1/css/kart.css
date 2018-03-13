@@ -1,0 +1,52 @@
+/*
+CSS av Halvard
+*/
+
+
+body {
+  background-color: #e3e3e3;
+  overflow: hidden;
+}
+
+.button {
+  display: block;
+  color: white;
+  font-size: 1em;
+  text-align: center;
+  text-decoration: none;
+  padding: 1em 0;
+  margin: 1em;
+  background-color: #C11;
+  box-shadow: 0 2px 3px #00000066
+}
+
+.button:hover {
+  background-color: #F44;
+  box-shadow: 0 2px 8px #00000066;
+}
+
+.button:active {
+  background-color: #A00;
+  box-shadow: 0 1px 6px #00000066;
+  position: relative;
+  top: 1px;
+}
+
+#map {
+  height: calc(100vh - 10em);
+}
+
+@media only screen and (min-width: 720px) {
+  body {
+    font-size: calc(14px + 0.4vw);
+  }
+  #map {
+    height: calc(100vh - 5em);
+  }
+
+  .button {
+    display: inline-block;
+    margin-right: 0;
+    width: calc(50vw - 2em);
+  }
+}

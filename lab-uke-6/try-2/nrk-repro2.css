@@ -1,0 +1,35 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #e3e3e3;
+  font-family: 'Fira-sans', sans-serif;
+  font-size: 16px;
+}
+
+.column-wrap {
+  margin: 0 auto;
+  width: 960px;
+}
+
+.main-col {
+  display: flex;
+  flex-direction:column;
+  margin: -1em -0.5em;
+}
+
+.module-wrap {
+  display: flex;
+  flex-direction: row;
+  background-color: white;
+  margin: 1em .5em;
+}
+
+.image {
+  min-height: 2em;
+  background-position: center;
+  background-size: cover;
+}
+
+.inner-text {
+  padding: 1em;
+}

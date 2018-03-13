@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, width=device-width">
+    <meta charset="utf-8">
+    <title>Toaletter</title>
+    <link rel="stylesheet" href="../css/map.css">
+    <script async defer src="../js/map.js"></script>
+  </head>
+  <body>
+    <div class="mapwrap">
+      <div class="sidepanel" id="toolbar">
+        <form method="get">
+          <div class="form-inner">
+            <div class="field">
+              <input type="text" name="fritekst" id="fritekst" placeholder="Sted" value="">
+            </div>
+
+            <div class="field">
+              <label for="dame" class="switch">
+                <input type="checkbox" name="dame" id="dame" value="true">
+                <span class="slider"></span>
+              </label>
+              <label for="dame">Dame</label>
+            </div>
+
+            <div class="field">
+              <label for="herre" class="switch">
+                <input type="checkbox" name="herre" id="herre" value="true">
+                <span class="slider"></span>
+              </label>
+              <label for="herre">Herre</label>
+            </div>
+
+            <div class="field">
+              <label for="rullestol" class="switch">
+                <input type="checkbox" name="rullestol" id="rullestol" value="true">
+                <span class="slider"></span>
+              </label>
+              <label for="rullestol">Rullestol</label>
+            </div>
+
+            <div class="field">
+              <label for="stellerom" class="switch">
+                <input type="checkbox" name="stellerom" id="stellerom" value="true">
+                <span class="slider"></span>
+              </label>
+              <label for="stellerom">Stellerom</label>
+            </div>
+
+            <div class="field">
+              <input type="range" name="pris" id="pris" min="0" max="12" step="1" value="12" onchange="updatePriceQuery(this)"
+              ><span class="pris-display">12</span>
+            </div>
+
+            <div class="field">
+              <label for="no_pissoir_only" class="switch">
+                <input type="checkbox" name="no_pissoir_only" id="no_pissoir_only" value="true">
+                <span class="slider"></span>
+              </label>
+              <label for="no_pissoir_only">Ekskluder pissoirer</label>
+            </div>
+
+            <div class="field">
+              <input type="date" id="date" name="date">
+              <input type="number" id="hour" name="hour" min="0" max="24">
+              <p>:</p>
+              <input type="number" id="minute" name="minute" min="0" max="59">
+            </div>
+          </div>
+
+          <input type="submit" value="Søk">
+
+        </form>
+
+        <div class="legend" id="legend"></div>
+
+      </div>
+
+      <div id="map"></div>
+    </div>
+    <nav>
+      <a class="button" href="../index.html">Home</a>
+      <a class="button" href="../aktiviteter/index.html">Activities</a>
+    </nav>
+  </body>
+</html>

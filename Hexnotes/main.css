@@ -1,0 +1,119 @@
+* {
+  margin: 0;  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  overflow: hidden;
+  font-size: calc(12px + 0.5vw);
+  font-family: "Fira Sans", sans-serif;
+}
+
+header {
+  width: 100%;
+  background: #C11;
+  color: white;
+  padding: .5em;
+}
+
+section {
+  padding: .5em;
+}
+
+/* .tag > input, .tag > a, .tag > span {
+  border: none;
+  color: #333;
+  font-size: 1em;
+  background-color: transparent;
+  display: inline-block;
+  padding: .2em;
+  border-radius: .2em;
+} */
+
+/*
+span.tagspan {
+  display: inline-block;
+  color: #333;
+  border: solid 2px #666;
+  padding: .2em;
+  border-radius: .3em;
+  min-width: 50px;
+} */
+
+.tag > .hidden {
+  position: absolute;
+  visibility: hidden;
+}
+
+.tag {
+  display:inline-block;
+  border-radius: .2em;
+  position: absolute;
+}
+
+.passive:hover {
+  background-color: darkgrey;
+}
+
+.passive {
+  background-color: #e3e3e3;
+}
+
+.edit {
+  background-color: darkgrey;
+  padding-right: 0.9em;
+}
+
+a.acceptTag {
+  background-color: green;
+  color: white;
+  width: 1.8em;
+  text-align: center;
+
+  border-radius: 1.8em;
+  position: absolute;
+  /* position: relative;
+  right: 1em; */
+
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+a.acceptTag:hover {
+  background-color: #060;
+}
+
+a.acceptTag:active {
+  background-color: #040;
+}
+
+.wrapper {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  height: 100vh;
+  width: 100vw;
+}
+
+.mapWrapper {
+  display: table-cell;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+#Map {
+  min-width: 100%;
+  min-height: 100%;
+}
+
+.column-map {
+  height: 100vh;
+  flex: 1;
+  flex-grow: 1;
+}
+
+#Tools {
+  min-width: 20em;
+  background: lightgrey;
+}

@@ -1,0 +1,25 @@
+body {
+  overflow: hidden;
+}
+
+#map {
+  height: calc(100vh - 10em);
+}
+
+.button {
+  font-size: 1em;
+  padding: 1em 0;
+  margin: 1em;
+}
+
+@media only screen and (min-width: 720px) {
+  #map {
+    height: calc(100vh - 5em);
+  }
+
+  .button {
+    display: inline-block;
+    margin-right: 0;
+    width: calc(50vw - 2em);
+  }
+}

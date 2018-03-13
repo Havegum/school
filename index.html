@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Wildboye</title>
+    <link href="https://fonts.googleapis.com/css?family=Fira+Sans" rel="stylesheet">
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      body {
+        font-family: 'Fira Sans', sans-serif;
+        font-size: calc(12px + .5vw);
+        color: darkblue;
+        background-color: lightblue;
+        transition: background-color 2s ease-out;
+      }
+
+      section {
+        background: #FFFFFF22;
+        border: 2px solid white;
+        border-radius: .5em;
+        width: 92vw;
+        padding: 1.5em 2vw;
+        margin: 1em;
+      }
+
+      h1 {
+        font-size: 5em;
+        text-align: center;
+        width: 100%;
+        margin: 10vh 0;
+        transition: color 2s ease-out;
+      }
+
+      h3 {
+        margin: 1em 0 0;
+      }
+
+      a {
+        font-size: 1.33em;
+        color: inherit;
+        white-space: nowrap;
+        text-decoration: none;
+      }
+
+      a:hover {
+          color: red;
+      }
+      a:active {
+        position: relative;
+        top: 1px;
+      }
+
+      .directories > a {
+        display: block;
+        padding: .25em;
+        margin-bottom: 1em;
+        border-radius: .25em;
+        border: 2px solid darkblue;
+      }
+
+      .directories > a:hover {
+        border-color: red;
+      }
+
+      .links > a {
+        display: block;
+      }
+
+      #TextContainer {
+          display: flex;
+          justify-content: center;
+          flex-direction: column;
+      }
+
+      #Wildboye {
+        z-index: -1;
+        position:fixed;
+        top:0px;
+        left:calc(50% - 415px);
+        opacity:.4;
+		    -webkit-animation: rotate 20s infinite linear;
+
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -o-user-select: none;
+        user-select: none;
+      }
+
+      @-webkit-keyframes rotate {
+    		from { -webkit-transform: rotate(0deg); }
+    		to { -webkit-transform: rotate(359deg); }
+      }
+
+    @-webkit-keyframes shake {
+      0%  {transform: translate(3px, 3px)}
+      20%  {transform: translate(-3px, -3px)}
+      40%  {transform: translate(4px, -5px)}
+      60%  {transform: translate(1px, 1px)}
+      80%  {transform: translate(4px, 7px)}
+      100%  {transform: translate(4px, 7px)}
+    }
+
+    @media only screen and (min-width: 670px) {
+      section {
+        width: calc(40% - 2em);
+        margin: 1em 4vw;
+      }
+
+      #TextContainer {
+        flex-direction: row;
+      }
+    }
+
+    </style>
+
+    <script async defer type="text/javascript" src="./wildboye.js"></script>
+  </head>
+
+  <body>
+  <img id="Wildboye" draggable="false" src="Wildboye.gif" alt="Spinning Wildboye">
+    <h1>Halvards Wildboye</h1>
+    <div id="TextContainer">
+      <section class="directories">
+        <a href="./Opg1/index.html" onmouseover="hover();" onmouseout="release();">
+          Oppgave 1</a>
+        <a href="./NRK-repro/nrk-repro.html" onmouseover="hover();" onmouseout="release();">
+          NRK reproduksjon</a>
+        <a href="./Hexnotes/index.html" onmouseover="hover();" onmouseout="release();">
+          Hexnotes</a>
+        <a href="./phpvalidation/index.php" onmouseover="hover();" onmouseout="release();">
+          Innlogging & php</a>
+      </section>
+    </div>
+  </body>
+</html>

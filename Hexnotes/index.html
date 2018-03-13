@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hexnotes</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <link rel="stylesheet" href="./main.css">
+  <script type="text/javascript" src="main.js"></script>
+</head>
+
+<body>
+  <div class="wrapper">
+    <div class="mapWrapper">
+      <img id="Map" class="column-map" src="./world-map.gif" alt="world map">
+    </div>
+    <aside id="Tools">
+      <header>
+        <h1>My Region</h1>
+      </header>
+      <section id="Tags">
+        <div class="tag">
+          <a class="hidden" onclick="editTag(this)">my great tag</a>
+          <input  type="text"
+                  size="1"
+                  onkeyup="resizeTag(this);"
+                  name="my-great-tag"
+                  value="my great tag">
+          <a class="acceptTag" onclick="confirmTag(this)">+</a>
+        </div>
+      </section>
+      <section id="Notes">
+        <p>Lorem ipsum dolor sit amet ...</p>
+        <div class="tag passive">
+          <span onfocus="edit(this.parentNode);" class="tagspan" contenteditable="true">tag</span>
+          <a onclick="closeTag(this.parentNode.parentNode);" class="acceptTag">+</a>
+          <div class="tagpanel" style="display:none;">
+            <input type="range" min="0" max="1" step="0.01" name="" value="1">
+          </div>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+</body>
+</html>

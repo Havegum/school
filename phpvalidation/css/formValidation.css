@@ -1,0 +1,52 @@
+.skjema::before, .skjema::after {
+  color: #444;
+  display: block;
+  text-align: center;
+}
+
+.skjema::before {
+  content:'Skjema:';
+  font-size: 1.33em;
+  margin-bottom: .6em;
+}
+
+.skjema::after {
+  content:'Obs: Ikke bruk personlige\Apassord på denne siden!';
+  white-space: pre;
+  font-size: .8em;
+  font-style: italic;
+  margin-top: 2em;
+}
+
+input {
+  width: 9em;
+  padding: .3em;
+  border: 1px solid lightgrey;
+  border-radius: 3px;
+  box-shadow: none;
+  margin: .3em auto;
+  font-size: 1em;
+}
+
+input:invalid:not(:focus):not(:placeholder-shown) {
+  border: 1px solid #F55;
+  box-shadow: 0 0 3px #F55;
+}
+
+input:valid:focus:not(:placeholder-shown):not([type='submit']) {
+  border: 1px solid #08B;
+  box-shadow: 0 0 3px #08B;
+}
+
+.input-container {
+  position: relative;
+}
+
+.errordot::before {
+  content: '\25CF';
+  display: block;
+  color: #F55;
+  position: absolute;
+  top: .5em;
+  left: -.9em;
+}

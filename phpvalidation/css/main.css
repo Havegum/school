@@ -1,0 +1,107 @@
+body {
+  display: flex;
+  height: 100vh;
+  margin: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-color: #e3e3e3;
+  background-size: cover;
+  font-size: 16px;
+  font-family: 'Fira-sans', verdana, sans-serif;
+}
+
+.red { color: #F55; }
+
+#background, .background {
+  margin: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  object-fit: cover;
+  opacity: 1;
+}
+
+body::after {
+  content: 'Foto: "Mount Hallwill" \A av Ethan Welty - Aurora Photos';
+  font-size: .8em;
+  text-align: right;
+  position: absolute;
+  bottom: 1em;
+  right: 1em;
+}
+
+.main, .skjema {
+  z-index: 1;
+  display: flex;
+  border-radius: 3px;
+  flex-direction: column;
+  align-items: center;
+  width: unset;
+  padding: 1.5em;
+  background: white;
+  box-shadow: 0 2px 6px #00000033;
+}
+
+.button, input[type='submit'] {
+  margin-top: .8em;
+  border: none;
+  padding: .5em;
+  background-color: #08B;
+  border-radius: 2px;
+  color: white;
+  text-decoration: none;
+  box-shadow: 0 2px 4px #00000022;
+}
+
+.button:hover, input[type='submit']:hover {
+  background-color: #2AF;
+  box-shadow: 0 2px 8px #00000022
+}
+
+.button:active, input[type='submit']:active {
+  background-color: #06A;
+  transform:translateY(1px);
+  box-shadow: 0 2px 4px #00000044
+}
+
+.blur-in {
+  -webkit-animation: blur-in 1s ease-out;
+}
+
+.slide-in {
+  -webkit-animation: slide-in .5s cubic-bezier(0.500, -0.440, 0.670, 1.475);;
+}
+
+.slide-out {
+  opacity: 0;
+  -webkit-animation: slide-out .5s ease-out;
+}
+
+.shake {
+  -webkit-animation: shake .18s infinite linear;
+}
+
+@-webkit-keyframes slide-in {
+  0%   { opacity: 0; transform: translateY(60px); }
+  100% { opacity: 1; transform: translateY(0px);  }
+}
+
+@-webkit-keyframes slide-out {
+  from { opacity: 1; transform: translateY(0px);   }
+  to   { opacity: 0; transform: translateY(-60px); }
+}
+
+@-webkit-keyframes shake {
+  0%   { transform: translateX(-2px); }
+  50%  { transform: translateX(2px);  }
+  100% { transform: translateX(-2px); }
+}
+
+@-webkit-keyframes blur-in {
+  0%    { opacity: 0; filter: blur(5px); }
+  50%   { opacity:.6; filter: blur(4px); }
+  100%  { opacity: 1; filter: blur(0);   }
+}
