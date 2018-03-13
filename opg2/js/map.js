@@ -25,6 +25,9 @@ window.onload = function() {
   var googleMapScript = document.createElement('script');
   googleMapScript.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAX-zK3v0QB69Ewp8O6mMh2s21RHTZKf7g&callback=initMap';
   document.getElementsByTagName('head')[0].appendChild(googleMapScript);
+  // googleMapScript.onload = function() {
+  //   console.log(google.maps);
+  // }
   // Hvis vi laster inn google's script etter vårt, garanterer vi at callback-
   // funksjonen 'initMap' eksisterer når kartet lastes inn.
 
@@ -68,6 +71,24 @@ function loadJson() {
   });
 }
 
+function cleanupMarker(marker) {
+  marker.position = {lat:numberOr(marker.latitude), lng:numberOr(marker.longitude)};
+  marker.pris = numberOr(marker.pris);
+  marker.dame = /^[1]$/.test(marker.dame);
+  marker.herre = /^[1]$/.test(marker.herre);
+  marker.rullestol = /^[1]$/.test(marker.rullestol);
+  marker.stellerom = /^[1]$/.test(marker.stellerom);
+  marker.no_pissoir_only = !/^[1]$/.test(marker.pissoir_only);
+  delete marker.pissoir_only;
+
+  marker.tid_hverdag = getTimestampsFromString(marker.tid_hverdag);
+  marker.tid_lordag = getTimestampsFromString(marker.tid_lordag);
+  marker.tid_sondag = getTimestampsFromString(marker.tid_sondag);
+
+  marker.label = marker.id; // Google Map nummererte labels
+  return marker;
+}
+
 async function initMarkers() {
   try {
     // forsøk å hente json, og lagre entries til markers-variabelen
@@ -80,48 +101,37 @@ async function initMarkers() {
 
   var list = document.createElement('ol');
 
-  map.markers = markers.map(marker => {
-    marker.position = {lat:numberOr(marker.latitude), lng:numberOr(marker.longitude)};
-    marker.pris = numberOr(marker.pris);
-    marker.dame = /[1]/.test(marker.dame);
-    marker.herre = /[1]/.test(marker.herre);
-    marker.rullestol = /[1]/.test(marker.rullestol);
-    marker.stellerom = /[1]/.test(marker.stellerom);
-    marker.no_pissoir_only = !/[1]/.test(marker.pissoir_only);
-    delete marker.pissoir_only;
+  map.markers = markers
+    .map(marker => cleanupMarker(marker))
+    .map(marker => {
+      marker = new google.maps.Marker(marker);
+      marker.infowindow = new google.maps.InfoWindow({content:
+          '<p>'+marker.sted+'</p>'
+        + '<p>'+marker.adresse+'</p>'
+        + '<p>Pris: '+(marker.pris==0 ? 'gratis' : marker.pris+',-')+'</p>'
+      });
+      marker.addListener('mouseover', () => marker.infowindow.open(map, marker));
+      marker.addListener('mouseout', () => marker.infowindow.close());
+      return marker;
+    })
+    .map(marker => {
+      let listElement = document.createElement('li');
 
-    marker.tid_hverdag = getTimestampsFromString(marker.tid_hverdag);
-    marker.tid_lordag = getTimestampsFromString(marker.tid_lordag);
-    marker.tid_sondag = getTimestampsFromString(marker.tid_sondag);
+      let header = document.createElement('h6');
+      header.innerHTML = '<span class="list-numbering">' + marker.id + ': </span>' + marker.sted;
 
-    marker.label = marker.id; // Google Map nummererte labels
+      let address = document.createElement('p');
+      address.textContent = marker.adresse;
 
-    marker = new google.maps.Marker(marker);
-    marker.infowindow = new google.maps.InfoWindow({content:
-        '<p>'+marker.sted+'</p>'
-      + '<p>'+marker.adresse+'</p>'
-      + '<p>Pris: '+(marker.pris==0 ? 'gratis' : marker.pris+',-')+'</p>'
-    });
+      listElement.appendChild(header);
+      listElement.appendChild(address);
 
-    marker.addListener('mouseover', () => marker.infowindow.open(map, marker));
-    marker.addListener('mouseout', () => marker.infowindow.close());
-
-    let listElement = document.createElement('li');
-
-    let header = document.createElement('h6');
-    header.innerHTML = '<span class="list-numbering">' + marker.id + ': </span>' + marker.sted;
-
-    let address = document.createElement('p');
-    address.textContent = marker.adresse;
-
-    listElement.appendChild(header);
-    listElement.appendChild(address);
-
-    list.appendChild(listElement);
-    return marker;
+      list.appendChild(listElement);
+      return marker;
   });
 
   document.getElementById('legend').appendChild(list);
+
   drawMarkers();
 }
 
@@ -134,7 +144,7 @@ function drawMarkers() {
   } else {
     map.markers.filter(marker => {
         marker.toggle(false);
-        return filterMarkers(query, marker)
+        return filterMarkers(query, marker);
       })
       .forEach(marker => marker.toggle(true));
   }
@@ -219,13 +229,13 @@ function filterMarkers(query, marker) {
   }
 
 
-  if(['kjønn:mann', 'pris:2'].reduce((search, bool) => {
-    if(bool && searchValid(marker, search))
-        return true;
-      else {
-        return false;
-      }
-  })) return true;
+  // if(['kjønn:mann', 'pris:2'].reduce((search, bool) => {
+  //   if(bool && searchValid(marker, search))
+  //       return true;
+  //     else {
+  //       return false;
+  //     }
+  // })) return true;
 }
 
 function updatePriceQuery(element) {
