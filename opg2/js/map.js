@@ -5,19 +5,13 @@
   This handles markers in the google map.
 */
 
-var map; // global var
+ // Vi lagrer kartet
+var map;
 
-if(!String.prototype.contains) {
+if(!String.prototype.includes) {
   // Hvis metoden ikke finnes, definerer vi en egen:
-  // Vi trenger denneU metoden for queries
-  String.prototype.contains = function (s) {
+  String.prototype.includes = String.prototype.contains || function (s) {
     return this.indexOf(s) !== -1;
-  };
-}
-
-if(!Date.now) {
-  Date.now = function() {
-    return new Date().getTime();
   };
 }
 
@@ -40,14 +34,13 @@ window.onload = function() {
     // map.markers får verdi av initMarkers, som venter på (await) loadJSON
     map.markers = new Promise(resolve => resolve(initMarkers(json)));
 
-    // drawMarkers kalles, men må vente på (await) map.markers
+    // drawMarkers kalles, men må venter på (await) map.markers
     drawMarkers();
 
-    // Mens vi venter på loadJSON kan vi like gjerne hente dagens dato ...
+    // Hvis vi venter på loadJSON kan vi like gjerne hente dagens dato ...
     let now = new Date();
-    document.getElementById('date').value = now.toISOString().replace(/T.+Z/, '');
-    document.getElementById('hour').value = now.getHours();
-    document.getElementById('minute').value = now.getMinutes();
+    document.getElementById('hour').placeholder = now.getHours();
+    document.getElementById('minute').placeholder = now.getMinutes();
   }
 };
 
@@ -78,37 +71,6 @@ function initMap() {
     zoom: 14,
     center: { lat: 60.390475, lng: 5.328369 }
   });
-
-  // Vi utvider google markers til å ha en toggle-metode
-  google.maps.Marker.prototype.toggle = function(on) {
-    this.setMap(on ? map : null);
-    return this;
-  };
-}
-
-function cleanupMarker(marker) {
-  marker.pris = numberOr(marker.pris);
-  marker.dame = /^[1]$/.test(marker.dame);
-  marker.herre = /^[1]$/.test(marker.herre);
-  marker.rullestol = /^[1]$/.test(marker.rullestol);
-  marker.stellerom = /^[1]$/.test(marker.stellerom);
-  marker.no_pissoir_only = !/^[1]$/.test(marker.pissoir_only);
-  delete marker.pissoir_only;
-
-  marker.tid_hverdag = getTimestampsFromString(marker.tid_hverdag);
-  marker.tid_lordag = getTimestampsFromString(marker.tid_lordag);
-  marker.tid_sondag = getTimestampsFromString(marker.tid_sondag);
-
-  // position, place, og label blir brukt av google.maps.Marker-objekter
-  // position er koordinatene til markøren
-  marker.position = {lat:numberOr(marker.latitude), lng:numberOr(marker.longitude)};
-  // vi lagrer place til sted for å unngå konflikter
-  marker.sted = marker.place;
-  delete marker.place;
-  // Google Map nummererte labels
-  marker.label = marker.id;
-
-  return marker;
 }
 
 async function initMarkers(json) {
@@ -124,6 +86,8 @@ async function initMarkers(json) {
   map.markers = markers
     .map(marker => cleanupMarker(marker))
     .map(marker => {
+
+      // HTML listeelement
       let listElement = document.createElement('li');
 
       let header = document.createElement('h6');
@@ -139,36 +103,79 @@ async function initMarkers(json) {
       return marker;
     })
     .map(marker => {
+      // Google Maps Marker
       marker = new google.maps.Marker(marker);
       marker.infowindow = new google.maps.InfoWindow({content:
-          '<p>'+marker.sted+'</p>'
-        + '<p>'+marker.adresse+'</p>'
-        + '<p>Pris: '+(marker.pris==0 ? 'gratis' : marker.pris+',-')+'</p>'
+          '<p>' + marker.sted + '</p>'
+        + '<p>' + marker.adresse + '</p>'
+        + '<p>Pris: '+ (marker.pris === 0 ? 'gratis' : marker.pris + ',-') + '</p>'
       });
       marker.addListener('mouseover', () => marker.infowindow.open(map, marker));
       marker.addListener('mouseout', () => marker.infowindow.close());
+      marker.setMap(map);
       return marker;
     });
 
   document.getElementById('legend').appendChild(list);
 }
 
-async function drawMarkers() {
+function cleanupMarker(marker) {
+  marker.pris = numberOr(marker.pris);
+  marker.dame = /^[1]$/.test(marker.dame);
+  marker.herre = /^[1]$/.test(marker.herre);
+  marker.rullestol = /^[1]$/.test(marker.rullestol);
+  marker.stellerom = /^[1]$/.test(marker.stellerom);
+  marker.no_pissoir_only = !/^[1]$/.test(marker.pissoir_only);
+  delete marker.pissoir_only;
+
+  marker.tid_hverdag = parseTimeRange(marker.tid_hverdag);
+  marker.tid_lordag = parseTimeRange(marker.tid_lordag);
+  marker.tid_sondag = parseTimeRange(marker.tid_sondag);
+  marker.getOpenings = function(day) {
+    // Dersom undefined:
+    day = Number(day) % 7 || new Date().getDay();
+
+    if(day == 5) {
+      return this.tid_lordag;
+    } else if (day == 6) {
+      return this.tid_sondag;
+    } else {
+      return this.tid_hverdag;
+    }
+  }
+
+  // disse variablene blir brukt av google.maps.Marker-objekter
+  // position er koordinatene til markøren
+  marker.position = {
+    lat: numberOr(marker.latitude),
+    lng: numberOr(marker.longitude)
+  };
+  // vi lagrer place til sted for å unngå konflikter
+  marker.sted = marker.place;
+  delete marker.place;
+  // Google Map bruker label for å lage merkelapper på markørene
+  marker.label = marker.id;
+
+  return marker;
+}
+
+async function drawMarkers(skipQuery) {
   // Vi kan hente query selv om map.markers ikke er klar
   var query = getQuery();
   // Så venter vi på map.markers ...
   await map.markers;
 
-  if(query === null) {
-    // Dersom ingen query, vis alle!
-    map.markers.forEach(marker => marker.toggle(true));
-  } else {
-    // Ellers: Skjul alle, filtrer markører etter query, og vis de resterende
-    map.markers
-      .map(marker => marker.toggle(false))
-      .filter(marker => filterMarkers(query, marker))
-      .forEach(marker => marker.toggle(true));
+  if(query === null || skipQuery) {
+    // Dersom ingen query, vis alle og returner
+    map.markers.forEach(marker => marker.setVisible(true));
+    return;
   }
+
+  // Skjul alle, filtrer markører etter query, og vis de resterende
+  map.markers
+    .map(marker => { marker.setVisible(false); return marker; })
+    .filter(marker => filterMarkers(query, marker))
+    .forEach(marker => marker.setVisible(true));
 }
 
 function getQuery() {
@@ -183,22 +190,24 @@ function getQuery() {
   search.forEach(query => {
 
     // For hvert navn-verdi-par, del opp paret i en array, og
-    // se hvor dataen kom fra. Variabelnavnet skal korrespondere med
-    // ID-en til elementet på siden.
+    // se hvor dataen kom fra. Variabelnavnet skal korrespondere
+    // med ID-en til elementet på siden.
 
     query = query.split('=');
+    if(query[1] === '') return; // Vi hopper over emptystring queries
     let elem = document.getElementById(query[0]);
 
     // Skjekk så hvilken type input variabelen kom fra
     // Dette brukes til å bestemme hvilken type variabelen
     // skal castes til.
 
+
     if(elem.type === 'checkbox') {
+      // Checkbox dukker opp kun dersom verdien er true
       query[1] = true;
-      elem.checked = query[1];
+      elem.checked = true;
 
     } else if(elem.type === 'text') {
-      if(query[1] === '') return;
       // Vi dekoder URI-enkodingen
       query[1] = decodeURIComponent(query[1].replace(/[+]/g, ' '));
 
@@ -217,8 +226,7 @@ function getQuery() {
       query[1] = Number(query[1]);
 
     } else {
-      // Hvis inputet ikke kan gjenkjennes
-      // hopper vi bare over søket
+      // Hvis inputet ikke kan gjenkjennes hopper vi bare over søket
       return;
     }
 
@@ -231,21 +239,13 @@ function getQuery() {
 
 function filterMarkers(query, marker) {
   // Hvis søk finnes og markøren ikke stemmer med søket, return false.
-  if(query.pris !== undefined && marker.pris > query.pris
-  || query.dame !== undefined && marker.dame != query.dame
-  || query.herre !== undefined && marker.herre != query.herre
-  || query.stellerom !== undefined && marker.stellerom != query.stellerom
-  || query.rullestol !== undefined && marker.rullestol != query.rullestol
-  || query.no_pissoir_only !== undefined && marker.no_pissoir_only != query.no_pissoir_only
-  || query.fritekst !== undefined && // Hvis fritekstsøk OG ingen treff
-      !( marker.plassering.toUpperCase().contains(query.fritekst.toUpperCase())
-      || marker.adresse.toUpperCase().contains(query.fritekst.toUpperCase())
-      || marker.sted.toUpperCase().contains(query.fritekst.toUpperCase())
-  || !checkSingleQuery(query, marker) //Quicksearch
-  )) {
-    return false;
-  } else {
+  if(
+    matchSimpleQueries(query, marker) &&
+    matchTextQuery(query, marker) &&
+    isOpen(marker, [query.hour, query.minute], query.date)) {
     return true;
+  } else {
+    return false;
   }
   // if(['kjønn:mann', 'pris:2'].reduce((search, bool) => {
   //   if(bool && searchValid(marker, search))
@@ -256,28 +256,86 @@ function filterMarkers(query, marker) {
   // })) return true;
 }
 
+function matchSimpleQueries(query, marker) {
+  return (
+    (query.pris === undefined || marker.pris <= query.pris) &&
+    (query.dame === undefined || marker.dame === query.dame) &&
+    (query.herre === undefined || marker.herre === query.herre) &&
+    (query.stellerom === undefined || marker.stellerom === query.stellerom) &&
+    (query.rullestol === undefined || marker.rullestol === query.rullestol) &&
+    (query.no_pissoir_only === undefined || marker.no_pissoir_only === query.no_pissoir_only)
+  );
+   // For hvert felt: hvis undefined eller gyldig verdi, returner true
+}
+
+function matchTextQuery(query, marker) {
+  if(query.fritekst === undefined ||
+        (marker.plassering.toUpperCase().includes(query.fritekst.toUpperCase())
+      || marker.adresse.toUpperCase().includes(query.fritekst.toUpperCase())
+      || marker.sted.toUpperCase().includes(query.fritekst.toUpperCase())
+  )) {
+    return quickSearch(query, marker) //Quicksearch
+  } else {
+    return false;
+  }
+}
+
 function updatePriceQuery(element) {
   element.nextSibling.textContent = element.value;
 }
 
-function numberOr(n, fallback) {
-  return isNaN(Number(n)) ? fallback | 0 : Number(n);
-}
+function parseTimeRange(time){
+  if(typeof time !== 'string') {
+    console.error('Missing argument to parse');
+    return;
+  }
 
-function getTimestampsFromString(time){
   if(time.match(/^ALL$/i)) {
     time = true;
-  } else if (time.match(/^NULL$/i)) {
+  } else if(time.match(/^NULL$/i)) {
     time = false;
-  } else {
+
+  } else if(/\d\d\.\d\d - \d\d\.\d\d/.test(time)){
     time = time
-      .match(/(\d\d\.\d\d) - (\d\d\.\d\d)/) // finn "00.00 - 99.99"
+      .match(/(\d\d\.\d\d) - (\d\d\.\d\d)/) // finn første instans f.eks.: "00.00 - 99.99"
       .slice(1, 3) // Bevar kun gruppene
-      .map(str => str.split('.').map(n => Number(n))); // split på . og konverter til Number
+      .map(string => string.split('.').map(n => Number(n))); // split på . og konverter til Number
+  } else {
+    console.error('Could not parse time');
   }
   return time; // f.eks: [[0, 30], [23, 59]]
 }
 
-function isOpen(date, time, marker) {
+function quickSearch() {
+  // TODO
+  return true;
+}
 
+// isOpen can be called from query, or from quickSearch
+// Query calls isOpen(marker, time, date)
+// quickSearch calls isOpen(marker [, time])
+function isOpen(marker, time, date) {
+  if(true) return true;
+  // Hvis dato ikke er definert, bruk i dag
+  date = date || new Date();
+
+  if(!time) {
+    // Hvis time ikke er definert, bruk nå
+    time = [date.getHours(), now.getMinutes()];
+
+  } else if(date.getHours() > time[0] || (time[0] === date.getHours() && time[1] > date.getMinutes())) {
+    // Hvis time er definert men tidspunktet har passert:
+    date.setDate(date.getDate() + 1); // øke dag med en
+  } // Hvis time er definert og innenfor scope trenger vi ikke gjøre mer her
+
+  // Vi henter åpningstidene til toalettet
+  // getOpenings sørger for at vi får riktig dag
+  var opening = marker.getOpenings(date.getDay());
+  if(opening[0][0] <= time[0] && time[1] >= opening[0][1]
+   && (time[1] < opening[1][0] || time[1] === opening[1][0]));
+}
+
+function numberOr(n, fallback) {
+  // Vil returnere 0 dersom n er NaN og fallback er undefined
+  return Number(n) || fallback || 0;
 }
