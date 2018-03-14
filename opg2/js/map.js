@@ -22,48 +22,48 @@ if(!Date.now) {
 }
 
 window.onload = function() {
-  var googleMapScript = document.createElement('script');
-  googleMapScript.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAX-zK3v0QB69Ewp8O6mMh2s21RHTZKf7g&callback=initMap';
-  document.getElementsByTagName('head')[0].appendChild(googleMapScript);
-  // googleMapScript.onload = function() {
-  //   console.log(google.maps);
-  // }
-  // Hvis vi laster inn google's script etter vårt, garanterer vi at callback-
-  // funksjonen 'initMap' eksisterer når kartet lastes inn.
+  // Vi begynner å laste ned JSON-filen
+  var json = loadJSON();
 
-  let now = new Date();
-  document.getElementById('date').value = now.toISOString().replace(/T.+Z/, '');
-  document.getElementById('hour').value = now.getHours();
-  document.getElementById('minute').value = now.getMinutes();
+  // Vi laster inn google maps script etter alt er lastet ned for å
+  // garantere at vår kode kjører etter google maps er klar
+  var googleMapScript = document.createElement('script');
+  googleMapScript.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAX-zK3v0QB69Ewp8O6mMh2s21RHTZKf7g';
+  document.getElementsByTagName('head')[0].appendChild(googleMapScript);
+
+  // Vi laster inn google-scriptet separat slik at vi garanterer
+  // at google-metodene er klare når vi kjører koden vår.
+  googleMapScript.onload = async function() {
+    // initMap viser kartet på siden
+    initMap();
+
+    // map.markers får verdi av initMarkers, som venter på (await) loadJSON
+    map.markers = new Promise(resolve => resolve(initMarkers(json)));
+
+    // drawMarkers kalles, men må vente på (await) map.markers
+    drawMarkers();
+
+    // Mens vi venter på loadJSON kan vi like gjerne hente dagens dato ...
+    let now = new Date();
+    document.getElementById('date').value = now.toISOString().replace(/T.+Z/, '');
+    document.getElementById('hour').value = now.getHours();
+    document.getElementById('minute').value = now.getMinutes();
+  }
 };
 
-function initMap() {
-  // Vi utvider google markers til å ha en toggle-metode
-  google.maps.Marker.prototype.toggle = function(on) {
-    this.setMap(on ? map : null);
-  };
-
-  var mapOptions = {
-    zoom: 14,
-    center: { lat: 60.390475, lng: 5.328369 }
-  };
-
-  map = new google.maps.Map(document.getElementById('map'), mapOptions);
-  initMarkers();
-}
-
-function loadJson() {
+function loadJSON() {
   return new Promise((resolve, reject) => {
     // XMLHttpRequest kjører async, så vi returnerer et promise med resolve og reject som callback
     var jsonRequest = new XMLHttpRequest();
     jsonRequest.overrideMimeType('application/json');
-    jsonRequest.open('GET', '../data/dokart.json', true);
+    // jsonRequest.open('GET', '../data/dokart.json', true);
+    jsonRequest.open('GET', 'http://hotell.difi.no/api/json/bergen/dokart?', true);
     jsonRequest.onload = function() {
       if(jsonRequest.status == '200') {
-        // Hvis alt i orden (200 OK), parse og resolve
-        resolve(JSON.parse(jsonRequest.responseText.replace(/place/g, 'sted')));
-        // Vi erstatter 'place' med 'sted' for å unngå konflikter med googleapis
+        // Hvis alt i orden (200 OK), parse & resolve
+        resolve(JSON.parse(jsonRequest.responseText).entries);
       } else {
+        // Ellers: vis feilmeldingen
         reject(jsonRequest.status + ': ' + jsonRequest.statusText);
       }
     }
@@ -71,8 +71,22 @@ function loadJson() {
   });
 }
 
+function initMap() {
+  // den globale variabelen map er nå et google.maps.Map-objekt der
+  // elementet er html-elementet med id "map"
+  map = new google.maps.Map(document.getElementById('map'), {
+    zoom: 14,
+    center: { lat: 60.390475, lng: 5.328369 }
+  });
+
+  // Vi utvider google markers til å ha en toggle-metode
+  google.maps.Marker.prototype.toggle = function(on) {
+    this.setMap(on ? map : null);
+    return this;
+  };
+}
+
 function cleanupMarker(marker) {
-  marker.position = {lat:numberOr(marker.latitude), lng:numberOr(marker.longitude)};
   marker.pris = numberOr(marker.pris);
   marker.dame = /^[1]$/.test(marker.dame);
   marker.herre = /^[1]$/.test(marker.herre);
@@ -85,35 +99,30 @@ function cleanupMarker(marker) {
   marker.tid_lordag = getTimestampsFromString(marker.tid_lordag);
   marker.tid_sondag = getTimestampsFromString(marker.tid_sondag);
 
-  marker.label = marker.id; // Google Map nummererte labels
+  // position, place, og label blir brukt av google.maps.Marker-objekter
+  // position er koordinatene til markøren
+  marker.position = {lat:numberOr(marker.latitude), lng:numberOr(marker.longitude)};
+  // vi lagrer place til sted for å unngå konflikter
+  marker.sted = marker.place;
+  delete marker.place;
+  // Google Map nummererte labels
+  marker.label = marker.id;
+
   return marker;
 }
 
-async function initMarkers() {
-  try {
-    // forsøk å hente json, og lagre entries til markers-variabelen
-    var markers = (await loadJson()).entries;
-  } catch(e) {
-    // hvis loadJson sitt promise ble rejected
-    console.error(e); // skriv ut feilmelding
-    return; // avslutt funksjonen
-  }
-
+async function initMarkers(json) {
   var list = document.createElement('ol');
+
+  try {
+    var markers = await json;
+  } catch (e) {
+    console.error(e);
+    return;
+  }
 
   map.markers = markers
     .map(marker => cleanupMarker(marker))
-    .map(marker => {
-      marker = new google.maps.Marker(marker);
-      marker.infowindow = new google.maps.InfoWindow({content:
-          '<p>'+marker.sted+'</p>'
-        + '<p>'+marker.adresse+'</p>'
-        + '<p>Pris: '+(marker.pris==0 ? 'gratis' : marker.pris+',-')+'</p>'
-      });
-      marker.addListener('mouseover', () => marker.infowindow.open(map, marker));
-      marker.addListener('mouseout', () => marker.infowindow.close());
-      return marker;
-    })
     .map(marker => {
       let listElement = document.createElement('li');
 
@@ -128,24 +137,36 @@ async function initMarkers() {
 
       list.appendChild(listElement);
       return marker;
-  });
+    })
+    .map(marker => {
+      marker = new google.maps.Marker(marker);
+      marker.infowindow = new google.maps.InfoWindow({content:
+          '<p>'+marker.sted+'</p>'
+        + '<p>'+marker.adresse+'</p>'
+        + '<p>Pris: '+(marker.pris==0 ? 'gratis' : marker.pris+',-')+'</p>'
+      });
+      marker.addListener('mouseover', () => marker.infowindow.open(map, marker));
+      marker.addListener('mouseout', () => marker.infowindow.close());
+      return marker;
+    });
 
   document.getElementById('legend').appendChild(list);
-
-  drawMarkers();
 }
 
-function drawMarkers() {
+async function drawMarkers() {
+  // Vi kan hente query selv om map.markers ikke er klar
   var query = getQuery();
+  // Så venter vi på map.markers ...
+  await map.markers;
 
   if(query === null) {
+    // Dersom ingen query, vis alle!
     map.markers.forEach(marker => marker.toggle(true));
-    return;
   } else {
-    map.markers.filter(marker => {
-        marker.toggle(false);
-        return filterMarkers(query, marker);
-      })
+    // Ellers: Skjul alle, filtrer markører etter query, og vis de resterende
+    map.markers
+      .map(marker => marker.toggle(false))
+      .filter(marker => filterMarkers(query, marker))
       .forEach(marker => marker.toggle(true));
   }
 }
@@ -181,9 +202,7 @@ function getQuery() {
       // Vi dekoder URI-enkodingen
       query[1] = decodeURIComponent(query[1].replace(/[+]/g, ' '));
 
-      let quickSearch = query[1].match(/\b(\W)+:(\W)\b/gi)
-      console.log(query[1]);
-
+      let quickSearch = query[1].match(/\b(\W)+:(\W)\b/gi);
       elem.value = query[1];
 
     } else if(elem.type === 'range') {
@@ -222,13 +241,12 @@ function filterMarkers(query, marker) {
       !( marker.plassering.toUpperCase().contains(query.fritekst.toUpperCase())
       || marker.adresse.toUpperCase().contains(query.fritekst.toUpperCase())
       || marker.sted.toUpperCase().contains(query.fritekst.toUpperCase())
+  || !checkSingleQuery(query, marker) //Quicksearch
   )) {
     return false;
   } else {
     return true;
   }
-
-
   // if(['kjønn:mann', 'pris:2'].reduce((search, bool) => {
   //   if(bool && searchValid(marker, search))
   //       return true;
@@ -247,17 +265,17 @@ function numberOr(n, fallback) {
 }
 
 function getTimestampsFromString(time){
-  if(time.match(/ALL/i)) {
+  if(time.match(/^ALL$/i)) {
     time = true;
-  } else if (time.match(/NULL/i)) {
+  } else if (time.match(/^NULL$/i)) {
     time = false;
   } else {
     time = time
-      .match(/(\d{2}\.\d{2})(?: - )(\d{2}\.\d{2})/)
-      .slice(1, 3)
-      .map(str => str.split('.').map(n => Number(n)));
+      .match(/(\d\d\.\d\d) - (\d\d\.\d\d)/) // finn "00.00 - 99.99"
+      .slice(1, 3) // Bevar kun gruppene
+      .map(str => str.split('.').map(n => Number(n))); // split på . og konverter til Number
   }
-  return time;
+  return time; // f.eks: [[0, 30], [23, 59]]
 }
 
 function isOpen(date, time, marker) {
