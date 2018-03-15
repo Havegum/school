@@ -34,13 +34,18 @@ window.onload = function() {
     // map.markers får verdi av initMarkers, som venter på (await) loadJSON
     map.markers = new Promise(resolve => resolve(initMarkers(json)));
 
-    // drawMarkers kalles, men må venter på (await) map.markers
-    drawMarkers();
+    // displayMarkers kalles, men må venter på (await) map.markers
+    displayMarkers();
 
     // Hvis vi venter på loadJSON kan vi like gjerne hente dagens dato ...
     let now = new Date();
-    document.getElementById('hour').placeholder = now.getHours();
-    document.getElementById('minute').placeholder = now.getMinutes();
+    ['hour', 'minute'].forEach(x => {
+      let elem = document.getElementById(x);
+      elem.placeholder = now['get' + (x === 'hour' ? 'Hours' : 'Minutes')]();
+      elem.addEventListener('click', () => {
+        elem.value = elem.value || elem.placeholder;
+      }, {once:true});
+    });
   }
 };
 
@@ -74,8 +79,6 @@ function initMap() {
 }
 
 async function initMarkers(json) {
-  var list = document.createElement('ol');
-
   try {
     var markers = await json;
   } catch (e) {
@@ -83,40 +86,46 @@ async function initMarkers(json) {
     return;
   }
 
+  var list = document.createElement('ol');
+
   map.markers = markers
     .map(cleanupMarker)
-    .map(marker => {
-
-      // HTML listeelement
-      let listElement = document.createElement('li');
-
-      let header = document.createElement('h6');
-      header.innerHTML = '<span class="list-numbering">' + marker.id + ': </span>' + marker.sted;
-
-      let address = document.createElement('p');
-      address.textContent = marker.adresse;
-
-      listElement.appendChild(header);
-      listElement.appendChild(address);
-
-      list.appendChild(listElement);
-      return marker;
-    })
-    .map(marker => {
-      // Google Maps Marker
-      marker = new google.maps.Marker(marker);
-      marker.infowindow = new google.maps.InfoWindow({content:
-          '<p>' + marker.sted + '</p>'
-        + '<p>' + marker.adresse + '</p>'
-        + '<p>Pris: '+ (marker.pris === 0 ? 'gratis' : marker.pris + ',-') + '</p>'
-      });
-      marker.addListener('mouseover', () => marker.infowindow.open(map, marker));
-      marker.addListener('mouseout', () => marker.infowindow.close());
-      marker.setMap(map);
-      return marker;
-    });
+    .map(marker => drawMarker(marker, list))
+    .map(toGoogleMarker);
 
   document.getElementById('legend').appendChild(list);
+}
+
+function drawMarker(marker, list) {
+  // HTML listeelement
+  let listElement = document.createElement('li');
+  listElement.id = "Marker--" + marker.id;
+
+  let header = document.createElement('h6');
+  header.innerHTML = '<span class="list-numbering">' + marker.id + ': </span>' + marker.plassering;
+
+  let address = document.createElement('p');
+  address.textContent = marker.adresse;
+
+  listElement.appendChild(header);
+  listElement.appendChild(address);
+
+  list.appendChild(listElement);
+  return marker;
+}
+
+function toGoogleMarker(marker) {
+  // Google Maps Marker
+  marker = new google.maps.Marker(marker);
+  marker.infowindow = new google.maps.InfoWindow({content:
+      '<p>' + marker.sted + '</p>'
+    + '<p>' + marker.adresse + '</p>'
+    + '<p>Pris: '+ (marker.pris === 0 ? 'gratis' : marker.pris + ',-') + '</p>'
+  });
+  marker.addListener('mouseover', () => marker.infowindow.open(map, marker));
+  marker.addListener('mouseout', () => marker.infowindow.close());
+  marker.setMap(map);
+  return marker;
 }
 
 function cleanupMarker(marker) {
@@ -133,16 +142,22 @@ function cleanupMarker(marker) {
   marker.tid_sondag = parseTimeRange(marker.tid_sondag);
   marker.getOpenings = function(day) {
     // Dersom undefined:
-    day = Number(day) % 7 || new Date().getDay();
+    if(isNaN(day)) {
+      day = new Date().getDay();
+    } else {
+      day = Number(day) % 7;
+    }
 
-    if(day == 5) {
-      return this.tid_lordag;
-    } else if (day == 6) {
-      return this.tid_sondag;
+    if(day == 6) {
+      return this.tid_lordag; // 6 => lørdag
+
+    } else if (day == 0) {
+      return this.tid_sondag; // 0 => søndag
+
     } else {
       return this.tid_hverdag;
     }
-  }
+  };
 
   // disse variablene blir brukt av google.maps.Marker-objekter
   // position er koordinatene til markøren
@@ -159,23 +174,30 @@ function cleanupMarker(marker) {
   return marker;
 }
 
-async function drawMarkers(skipQuery) {
+async function displayMarkers() {
   // Vi kan hente query selv om map.markers ikke er klar
   var query = getQuery();
   // Så venter vi på map.markers ...
   await map.markers;
 
   // Dersom ingen query, vis alle og returner:
-  if(query === null || skipQuery) {
+  if(query === null) {
     map.markers.forEach(marker => marker.setVisible(true));
     return;
   }
 
   // Skjul alle, filtrer markører etter query, og vis de resterende
   map.markers
-    .map(marker => { marker.setVisible(false); return marker; })
+    .map(marker => {
+      marker.setVisible(false);
+      document.getElementById('Marker--' + marker.id).classList.add('disabled');
+      return marker;
+    })
     .filter(marker => filterMarkers(query, marker))
-    .forEach(marker => marker.setVisible(true));
+    .forEach(marker => {
+      marker.setVisible(true)
+      document.getElementById('Marker--' + marker.id).classList.remove('disabled');
+    });
 }
 
 function getQuery() {
@@ -188,8 +210,7 @@ function getQuery() {
   // søket er tomt, og gjør klart et objekt til å lagre søket i.
 
   search.forEach(query => {
-
-    // For hvert navn-verdi-par, del opp paret i en array, og
+    // For hvert 'navn-verdi'-par, del opp paret i en array, og
     // se hvor dataen kom fra. Variabelnavnet skal korrespondere
     // med ID-en til elementet på siden.
 
@@ -197,15 +218,18 @@ function getQuery() {
     if(query[1] === '') return; // Vi hopper over emptystring queries
     let elem = document.getElementById(query[0]);
 
-    // Skjekk så hvilken type input variabelen kom fra
-    // Dette brukes til å bestemme hvilken type variabelen
-    // skal castes til.
+    // Skjekk så hvilken type input variabelen kom fra, dette brukes
+    // til å bestemme hvilken type variabelen skal castes til.
 
+
+    // Checkbox dukker opp kun dersom verdien er sann,
+    // så vi returnerer ganske enkelt true
     if(elem.type === 'checkbox') {
-      // Checkbox dukker opp kun dersom verdien er true
-      query[1] = true;
       elem.checked = true;
+      query[1] = true;
 
+    // fritekstsøk deles må dekodes fra URI-enkoding,
+    // så må vi dele søket i fritekst og hurtigsøk
     } else if(elem.type === 'text') {
       // Vi dekoder URI-enkodingen
       query[1] = decodeURIComponent(query[1].replace(/[+]/g, ' '));
@@ -219,22 +243,32 @@ function getQuery() {
           query[1] = query[1].replace(qs, '').trim();
         });
       }
-
       searchCriteria.quickSearch = quickSearch;
 
+    // range-input referer til makspris-slideren
+    // Vi henter verdien, caster til nummer, og oppdaterer teksten
+    // som står til høyre for slideren.
     } else if(elem.type === 'range') {
-      query[1] = Number(query[1]);
       elem.value = query[1];
+      query[1] = Number(query[1]);
       updatePriceQuery(elem);
 
+    // Date castes ganske enkelt til en dato
     } else if(elem.type === 'date') {
+      elem.value = query[1];
       query[1] = new Date(query[1]);
 
+    // Nummerinput (time, minutt), castes til nummer
     } else if(elem.type === 'number') {
+      elem.value = query[1];
       query[1] = Number(query[1]);
 
+      searchCriteria.time = searchCriteria.time || [];
+      searchCriteria.time[elem.id == 'hour' ? 0 : 1] = query[1];
+      return;
+
+    // Hvis inputet ikke kan gjenkjennes hopper vi bare over søket
     } else {
-      // Hvis inputet ikke kan gjenkjennes hopper vi bare over søket
       return;
     }
 
@@ -242,15 +276,49 @@ function getQuery() {
     // F.eks.: searchCriteria['fritekst'] = 'galleriet';
   });
 
+
+  if(searchCriteria.time || searchCriteria.date) {
+    var today;
+    var date = searchCriteria.date;
+    var time = searchCriteria.time;
+
+    // Hvis dato ikke er definert, bruk i dag
+    if(!date) {
+      date = new Date();
+      today = true;
+    } else {
+      today = new Date();
+      today = (
+        today.getFullYear() == date.getFullYear() &&
+        today.getMonth() == date.getMonth() &&
+        today.getDate() == date.getDate()
+      );
+    }
+
+    // Hvis time ikke er definert, bruk nå
+    time = time || [];
+    time[0] = time[0] || new Date().getHours();
+    time[1] = time[1] || new Date().getMinutes();
+
+    // Hvis time har passert og dato er idag:
+    if(today && (time[0] < date.getHours() || (time[0] === date.getHours() && time[1] > date.getMinutes()))) {
+      date.setDate(date.getDate() + 1); // øk dag med en
+    }
+    searchCriteria.today = today;
+    searchCriteria.date = date;
+    searchCriteria.time = time;
+  }
+
   return searchCriteria;
 }
 
 function filterMarkers(query, marker) {
   // Hvis søk finnes og markøren ikke stemmer med søket, return false.
+
   if(
-      // matchSimpleQueries(query, marker)
-      matchTextQuery(query, marker)
-   && isOpen(marker, query.time, query.date)
+    matchSimpleQueries(query, marker)
+    && matchTextQuery(query, marker)
+    && isOpen(marker, query)
   ) {
     return true;
   } else {
@@ -259,7 +327,7 @@ function filterMarkers(query, marker) {
 }
 
 function matchSimpleQueries(query, marker) {
-  return (
+  var matchAllQueries = (
     (query.pris === undefined || marker.pris <= query.pris) &&
     (query.dame === undefined || marker.dame === query.dame) &&
     (query.herre === undefined || marker.herre === query.herre) &&
@@ -267,6 +335,8 @@ function matchSimpleQueries(query, marker) {
     (query.rullestol === undefined || marker.rullestol === query.rullestol) &&
     (query.no_pissoir_only === undefined || marker.no_pissoir_only === query.no_pissoir_only)
   );
+
+  return matchAllQueries;
    // For hvert felt: hvis undefined eller gyldig verdi, returner true
 }
 
@@ -282,12 +352,40 @@ function matchTextQuery(query, marker) {
   }
 }
 
-function updatePriceQuery(element) {
-  element.nextSibling.textContent = element.value;
+// isOpen can be called from query, or from quickSearch
+// Query calls isOpen(marker, time, date)
+// quickSearch calls isOpen(marker [, time])
+function isOpen(marker, query) {
+  if(!query.time || !query.date) return true;
+
+  var today = query.today;
+  var date = query.date;
+  var time = query.time;
+
+  // Vi henter åpningstidene til toalettet
+  // getOpenings sørger for at vi får riktig dag
+  var opening = marker.getOpenings(date.getDay());
+
+  if(typeof opening === 'boolean') return opening;
+
+  var start = opening[0];
+  var end = opening[1];
+
+  // Vi skjekker om time er etter åpningstid og før stengetid
+  // Hvis starttime er mindre enn time[h]
+  // eller time[h] er samme som starttidspunkt, OG time[m] er etter eller lik åpnigsminutt:
+  if(
+    (start[0] < time[0] || (start[0] === time[0] && start[1] <= time[1])) &&
+    (end[0]   > time[0] || (end[0]   === time[0] && end[1]   >= time[1]))
+  ) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 function parseTimeRange(time) {
-  if(typeof time !== 'string') {
+  if(!time || typeof time !== 'string') {
     console.error('Missing argument to parse');
     return;
   }
@@ -344,46 +442,11 @@ function quickSearch(q, marker) {
   } else if(criteria === 'åpen') {
     return isOpen(marker);
   }
-
   return false;
 }
 
-// isOpen can be called from query, or from quickSearch
-// Query calls isOpen(marker, time, date)
-// quickSearch calls isOpen(marker [, time])
-function isOpen(marker, time, date) {
-  // Hvis dato ikke er definert, bruk i dag
-  date = date || new Date();
-
-  // Hvis time ikke er definert, bruk nå
-  if(!time) {
-    time = [date.getHours(), date.getMinutes()];
-  }
-
-  // Hvis time er definert men tidspunktet har passert:
-  if(date.getHours() > time[0] || (time[0] === date.getHours() && time[1] >= date.getMinutes())) {
-    date.setDate(date.getDate() + 1); // øke dag med en
-  }
-
-  // Vi henter åpningstidene til toalettet
-  // getOpenings sørger for at vi får riktig dag
-  var opening = marker.getOpenings(date.getDay());
-  if(typeof opening === 'boolean') return opening;
-
-  var start = opening[0];
-  var end = opening[1];
-
-  // Vi skjekker om time er etter åpningstid og før stengetid
-  // Hvis starttime er mindre enn time[h]
-  // eller time[h] er samme som starttidspunkt, OG time[m] er etter eller lik åpnigsminutt:
-  if(
-    (start[0] < time[0] || (start[0] === time[0] && start[1] <= time[1])) &&
-    (end[0]   > time[0] || (end[0]   === time[0] && end[1]   >= time[1]))
-  ) {
-    return true;
-  } else {
-    return false;
-  }
+function updatePriceQuery(element) {
+  element.nextSibling.textContent = element.value;
 }
 
 function numberOr(n, fallback) {

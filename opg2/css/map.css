@@ -239,6 +239,18 @@ ol {
 
 li {
   margin: .5em 0;
+  transition: opacity .3s;
+}
+
+li.disabled {
+  opacity: .3;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+li.disabled > p {
+  display: none;
 }
 
 h6 {
