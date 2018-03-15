@@ -84,7 +84,7 @@ async function initMarkers(json) {
   }
 
   map.markers = markers
-    .map(marker => cleanupMarker(marker))
+    .map(cleanupMarker)
     .map(marker => {
 
       // HTML listeelement
@@ -165,8 +165,8 @@ async function drawMarkers(skipQuery) {
   // Så venter vi på map.markers ...
   await map.markers;
 
+  // Dersom ingen query, vis alle og returner:
   if(query === null || skipQuery) {
-    // Dersom ingen query, vis alle og returner
     map.markers.forEach(marker => marker.setVisible(true));
     return;
   }
@@ -201,7 +201,6 @@ function getQuery() {
     // Dette brukes til å bestemme hvilken type variabelen
     // skal castes til.
 
-
     if(elem.type === 'checkbox') {
       // Checkbox dukker opp kun dersom verdien er true
       query[1] = true;
@@ -210,9 +209,18 @@ function getQuery() {
     } else if(elem.type === 'text') {
       // Vi dekoder URI-enkodingen
       query[1] = decodeURIComponent(query[1].replace(/[+]/g, ' '));
-
-      let quickSearch = query[1].match(/\b(\W)+:(\W)\b/gi);
       elem.value = query[1];
+
+      let regex = /(?:[^:\s]+):(?:[^:\s])+/g;
+      let quickSearch = query[1].match(regex);
+
+      if(quickSearch !== null) {
+        quickSearch.forEach(qs => {
+          query[1] = query[1].replace(qs, '').trim();
+        });
+      }
+
+      searchCriteria.quickSearch = quickSearch;
 
     } else if(elem.type === 'range') {
       query[1] = Number(query[1]);
@@ -240,20 +248,14 @@ function getQuery() {
 function filterMarkers(query, marker) {
   // Hvis søk finnes og markøren ikke stemmer med søket, return false.
   if(
-    matchSimpleQueries(query, marker) &&
-    matchTextQuery(query, marker) &&
-    isOpen(marker, [query.hour, query.minute], query.date)) {
+      // matchSimpleQueries(query, marker)
+      matchTextQuery(query, marker)
+   && isOpen(marker, query.time, query.date)
+  ) {
     return true;
   } else {
     return false;
   }
-  // if(['kjønn:mann', 'pris:2'].reduce((search, bool) => {
-  //   if(bool && searchValid(marker, search))
-  //       return true;
-  //     else {
-  //       return false;
-  //     }
-  // })) return true;
 }
 
 function matchSimpleQueries(query, marker) {
@@ -274,7 +276,7 @@ function matchTextQuery(query, marker) {
       || marker.adresse.toUpperCase().includes(query.fritekst.toUpperCase())
       || marker.sted.toUpperCase().includes(query.fritekst.toUpperCase())
   )) {
-    return quickSearch(query, marker) //Quicksearch
+    return query.quickSearch ? quickSearch(query.quickSearch[0], marker) : true;
   } else {
     return false;
   }
@@ -284,7 +286,7 @@ function updatePriceQuery(element) {
   element.nextSibling.textContent = element.value;
 }
 
-function parseTimeRange(time){
+function parseTimeRange(time) {
   if(typeof time !== 'string') {
     console.error('Missing argument to parse');
     return;
@@ -295,7 +297,7 @@ function parseTimeRange(time){
   } else if(time.match(/^NULL$/i)) {
     time = false;
 
-  } else if(/\d\d\.\d\d - \d\d\.\d\d/.test(time)){
+  } else if(/\d\d\.\d\d - \d\d\.\d\d/.test(time)) {
     time = time
       .match(/(\d\d\.\d\d) - (\d\d\.\d\d)/) // finn første instans f.eks.: "00.00 - 99.99"
       .slice(1, 3) // Bevar kun gruppene
@@ -306,33 +308,82 @@ function parseTimeRange(time){
   return time; // f.eks: [[0, 30], [23, 59]]
 }
 
-function quickSearch() {
-  // TODO
-  return true;
+function quickSearch(q, marker) {
+  // Hvis ingen quicksearch eller ugyldig format, ignorer søket
+  if(!q || !q.match(/:/)) return true;
+
+  query = q.split(':');
+  let criteria = query[0];
+
+  if(criteria === 'kjønn') {
+    if(query[1] === 'mann') {
+      return marker.herre === true;
+    } else if(query[1] === 'kvinne') {
+      return marker.dame === true;
+    }
+
+  } else if(criteria === 'stellerom') {
+    return marker.stellerom === true;
+
+  } else if(criteria ==='pissoir') {
+    return marker.pissoir_only === true; //eller 1
+
+  } else if(criteria === 'rullestol') {
+    return marker.rullestol === true;
+
+  } else if(criteria === 'pris') {
+    if(isNaN(query[1])) {
+      if(query[1] === 'gratis') {
+        return marker.pris === 0;
+      } else {
+        return true;
+      }
+    }
+    return marker.pris <= Number(query[1]);
+
+  } else if(criteria === 'åpen') {
+    return isOpen(marker);
+  }
+
+  return false;
 }
 
 // isOpen can be called from query, or from quickSearch
 // Query calls isOpen(marker, time, date)
 // quickSearch calls isOpen(marker [, time])
 function isOpen(marker, time, date) {
-  if(true) return true;
   // Hvis dato ikke er definert, bruk i dag
   date = date || new Date();
 
+  // Hvis time ikke er definert, bruk nå
   if(!time) {
-    // Hvis time ikke er definert, bruk nå
-    time = [date.getHours(), now.getMinutes()];
+    time = [date.getHours(), date.getMinutes()];
+  }
 
-  } else if(date.getHours() > time[0] || (time[0] === date.getHours() && time[1] > date.getMinutes())) {
-    // Hvis time er definert men tidspunktet har passert:
+  // Hvis time er definert men tidspunktet har passert:
+  if(date.getHours() > time[0] || (time[0] === date.getHours() && time[1] >= date.getMinutes())) {
     date.setDate(date.getDate() + 1); // øke dag med en
-  } // Hvis time er definert og innenfor scope trenger vi ikke gjøre mer her
+  }
 
   // Vi henter åpningstidene til toalettet
   // getOpenings sørger for at vi får riktig dag
   var opening = marker.getOpenings(date.getDay());
-  if(opening[0][0] <= time[0] && time[1] >= opening[0][1]
-   && (time[1] < opening[1][0] || time[1] === opening[1][0]));
+  if(typeof opening === 'boolean') return opening;
+
+  var start = opening[0];
+  var end = opening[1];
+
+  // Vi skjekker om time er etter åpningstid og før stengetid
+  // Hvis starttime er mindre enn time[h]
+  // eller time[h] er samme som starttidspunkt, OG time[m] er etter eller lik åpnigsminutt:
+  if(
+    (start[0] < time[0] || (start[0] === time[0] && start[1] <= time[1])) &&
+    (end[0]   > time[0] || (end[0]   === time[0] && end[1]   >= time[1]))
+  ) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 function numberOr(n, fallback) {
