@@ -32,7 +32,7 @@ window.onload = function() {
     initMap();
 
     // map.markers får verdi av initMarkers, som venter på (await) loadJSON
-    map.markers = new Promise(resolve => resolve(initMarkers(json)));
+    map.markers = initMarkers(json);
 
     // displayMarkers kalles, men må venter på (await) map.markers
     displayMarkers();
@@ -88,12 +88,14 @@ async function initMarkers(json) {
 
   var list = document.createElement('ol');
 
-  map.markers = markers
+  let processedMarkers = markers
     .map(cleanupMarker)
     .map(marker => drawMarker(marker, list))
     .map(toGoogleMarker);
 
   document.getElementById('legend').appendChild(list);
+
+  return processedMarkers;
 }
 
 function drawMarker(marker, list) {
@@ -177,17 +179,15 @@ function cleanupMarker(marker) {
 async function displayMarkers() {
   // Vi kan hente query selv om map.markers ikke er klar
   var query = getQuery();
-  // Så venter vi på map.markers ...
-  await map.markers;
 
   // Dersom ingen query, vis alle og returner:
   if(query === null) {
-    map.markers.forEach(marker => marker.setVisible(true));
+    (await map.markers).forEach(marker => marker.setVisible(true));
     return;
   }
 
   // Skjul alle, filtrer markører etter query, og vis de resterende
-  map.markers
+  (await map.markers)
     .map(marker => {
       marker.setVisible(false);
       document.getElementById('Marker--' + marker.id).classList.add('disabled');
@@ -314,11 +314,10 @@ function getQuery() {
 
 function filterMarkers(query, marker) {
   // Hvis søk finnes og markøren ikke stemmer med søket, return false.
-
   if(
       matchSimpleQueries(query, marker)
    && matchTextQuery(query, marker)
-   && isOpen(marker, query.time, query.date)
+   && isOpen(marker, query)
   ) {
     return true;
   } else {
@@ -346,12 +345,16 @@ function matchTextQuery(query, marker) {
       || marker.adresse.toUpperCase().includes(query.fritekst.toUpperCase())
       || marker.sted.toUpperCase().includes(query.fritekst.toUpperCase())
   )) {
+
     if(query.quickSearch !== undefined) {
       var quickSearch = query.quickSearch.reduce((bool, q) => {
         return (bool && checkQuickSearch(q, marker));
       }, true);
+      return quickSearch;
+
+    } else {
+      return true;
     }
-    return quickSearch;
 
   } else {
     return false;
@@ -362,7 +365,7 @@ function matchTextQuery(query, marker) {
 // Query calls isOpen(marker, time, date)
 // quickSearch calls isOpen(marker [, time])
 function isOpen(marker, query) {
-  if(!query.time || !query.date) return true;
+  if(!query || !query.time || !query.date) return true;
 
   var today = query.today;
   var date = query.date;
