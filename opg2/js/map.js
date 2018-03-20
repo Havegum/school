@@ -248,8 +248,8 @@ function getQuery() {
 function filterMarkers(query, marker) {
   // Hvis søk finnes og markøren ikke stemmer med søket, return false.
   if(
-      // matchSimpleQueries(query, marker)
-      matchTextQuery(query, marker)
+      matchSimpleQueries(query, marker)
+   && matchTextQuery(query, marker)
    && isOpen(marker, query.time, query.date)
   ) {
     return true;
@@ -276,7 +276,13 @@ function matchTextQuery(query, marker) {
       || marker.adresse.toUpperCase().includes(query.fritekst.toUpperCase())
       || marker.sted.toUpperCase().includes(query.fritekst.toUpperCase())
   )) {
-    return query.quickSearch ? quickSearch(query.quickSearch[0], marker) : true;
+    if(query.quickSearch !== undefined) {
+      var quickSearch = query.quickSearch.reduce((bool, q) => {
+        return (bool && checkQuickSearch(q, marker));
+      }, true);
+    }
+    return quickSearch;
+
   } else {
     return false;
   }
@@ -308,7 +314,7 @@ function parseTimeRange(time) {
   return time; // f.eks: [[0, 30], [23, 59]]
 }
 
-function quickSearch(q, marker) {
+function checkQuickSearch(q, marker) {
   // Hvis ingen quicksearch eller ugyldig format, ignorer søket
   if(!q || !q.match(/:/)) return true;
 
@@ -326,7 +332,7 @@ function quickSearch(q, marker) {
     return marker.stellerom === true;
 
   } else if(criteria ==='pissoir') {
-    return marker.pissoir_only === true; //eller 1
+    return marker.pissoir_only === true;
 
   } else if(criteria === 'rullestol') {
     return marker.rullestol === true;
@@ -343,9 +349,11 @@ function quickSearch(q, marker) {
 
   } else if(criteria === 'åpen') {
     return isOpen(marker);
-  }
 
-  return false;
+  } else {
+    // Dersom hurtigsøket ikke gjenkjennes ignorerer vi søket:
+    return true;
+  }
 }
 
 // isOpen can be called from query, or from quickSearch
