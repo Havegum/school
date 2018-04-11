@@ -1,0 +1,271 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  height: 100vh;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+
+  font-family: 'Roboto', sans-serif;
+}
+
+.mapwrap {
+  display: flex;
+  background-color: #e3e3e3;
+  flex-grow: 1;
+  min-height: 0;
+}
+
+.sidepanel {
+  display: flex;
+  flex-direction: column;
+}
+
+form {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  margin: .5em;
+  align-items: center;
+  overflow: auto;
+}
+
+.form-inner {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  flex-grow: 1;
+}
+
+nav {
+  display: flex;
+  background-color: white;
+  position: relative;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.field {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-right: .75em;
+  margin-top: .5em;
+}
+
+.button,
+input[type="submit"] {
+  position: relative;
+  cursor: pointer;
+
+  font-size: 1em;
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  background-color: #D32F2F;
+
+  padding: 1em;
+  border-radius: .5em;
+  margin: .5em;
+  border:none;
+
+  -webkit-transition: .2s ease-out;
+          transition: .2s ease-out;
+}
+
+.button {
+  width: 10em;
+  margin: .5em .25em;
+}
+
+.button:hover,
+input[type="submit"]:hover {
+  border-radius: 2px;
+  background-color: #F44336;
+}
+
+.button:active,
+input[type="submit"]:active {
+  background-color: #B71C1C;
+  top: 1px;
+  transition: none
+}
+
+.switch {
+  display: inline-block;
+  position: relative;
+  margin-right: .25em;
+  width: 2.4em;
+  height: 1.4em;
+}
+
+.switch input {display:none;}
+
+.slider {
+  cursor: pointer;
+  background-color: #ccc;
+  border-radius: .7em;
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  -webkit-transition: .3s ease-out;
+          transition: .3s ease-out;
+}
+
+.slider:before {
+  content: "";
+  height: 1em;
+  width: 1em;
+  background-color: white;
+  border-radius: .5em;
+  box-shadow: 0 1px .15em #00000088;
+
+  position: absolute;
+  left: .2em;
+  bottom: .2em;
+
+  -webkit-transition: .25s cubic-bezier(0.600, 1.700, 0.700, 1.000);
+          transition: .25s cubic-bezier(0.600, 1.700, 0.700, 1.000);
+}
+
+input:checked + .slider {
+  background-color: #2E7D32;
+  animation: accent-background-fade-in .4s ease-in;
+}
+
+@keyframes accent-background-fade-in {
+  from { background-color: #69F0AE; }
+  to   { background-color: #2E7D32; }
+}
+
+input:checked + .slider:before {
+  transform: translateX(1em);
+}
+
+label {
+  cursor: pointer;
+  padding: .2em;
+}
+
+label, .field span, .button {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+
+input[type="text"],
+input[type="date"],
+input[type="number"] {
+  border: none;
+  width: 11em;
+  box-sizing: content-box;
+  font-size: .9em;
+  color: #222;
+
+  background-color: #ccc;
+  padding: .2em .5em;
+  border: 2px solid #ccc;
+  border-radius: .3em;
+
+  transition: .2s ease-out;
+}
+
+input[type="text"]:focus,
+input[type="date"]:focus,
+input[type="number"]:focus {
+  background-color: #cccccc00;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  width: 2.5em;
+  margin: 0 .2em;
+}
+input[type="date"] {
+  font-size: 1.1em;
+  width: 8em;
+  margin-right: .4em;
+}
+
+input[type="range"] {
+  border: none;
+  width: 10em;
+  font-size: 1em;
+  margin-right: .3em;
+}
+
+.pris-display::before {  content:"Makspris: "  }
+.pris-display::after {  content:",-"  }
+
+#map {
+  flex-grow: 1;
+  min-height: 1em;
+  /* Google map documentation recommends:
+   * Always set the map height explicitly to define the size of the div
+   * element that contains the map. */
+   background-color: #e3e3e3;
+}
+
+.legend {
+  background-color: white;
+  flex-shrink: 3;
+  flex-grow: 1;
+  overflow-y: scroll;
+}
+
+ol {
+  padding: 1em;
+  color: #555;
+  list-style-type: none;
+}
+
+li {
+  margin: .5em 0;
+  transition: opacity .3s;
+}
+
+li.disabled {
+  opacity: .3;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+li.disabled > p {
+  display: none;
+}
+
+h6 {
+  font-size: 1em;
+  font-weight: normal;
+}
+
+ol p {
+  font-size: .8em;
+}
+
+.list-numbering {
+  color: black;
+  font-weight: bold;
+}
+
+@media only screen and (min-width: 720px) {
+}

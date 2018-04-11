@@ -60,7 +60,7 @@ function loadJSON() {
       if(jsonRequest.status == '200') {
         // Hvis alt i orden (200 OK), parse & resolve
         resolve(JSON.parse(jsonRequest.responseText).entries);
-      } else {
+    } else {
         // Ellers: vis feilmeldingen
         reject(jsonRequest.status + ': ' + jsonRequest.statusText);
       }
@@ -206,80 +206,19 @@ async function displayMarkers() {
 
 function getQuery() {
   var search = window.location.search.replace('?', '').split('&');
-  if(search[0] === '') return null;
 
   var searchCriteria = {};
 
   // Vi deler søket i sine navn-verdi par, returnerer null dersom
   // søket er tomt, og gjør klart et objekt til å lagre søket i.
+  search.forEach(q => handleQuery(q, searchCriteria));
 
-  search.forEach(query => {
-    // For hvert 'navn-verdi'-par, del opp paret i en array, og
-    // se hvor dataen kom fra. Variabelnavnet skal korrespondere
-    // med ID-en til elementet på siden.
-
-    query = query.split('=');
-    if(query[1] === '') return; // Vi hopper over emptystring queries
-    let elem = document.getElementById(query[0]);
-
-    // Skjekk så hvilken type input variabelen kom fra, dette brukes
-    // til å bestemme hvilken type variabelen skal castes til.
-
-
-    // Checkbox dukker opp kun dersom verdien er sann,
-    // så vi returnerer ganske enkelt true
-    if(elem.type === 'checkbox') {
-      elem.checked = true;
-      query[1] = true;
-
-    // fritekstsøk deles må dekodes fra URI-enkoding,
-    // så må vi dele søket i fritekst og hurtigsøk
-    } else if(elem.type === 'text') {
-      // Vi dekoder URI-enkodingen
-      query[1] = decodeURIComponent(query[1].replace(/[+]/g, ' '));
-      elem.value = query[1];
-
-      let regex = /(?:[^:\s]+):(?:[^:\s])+/g;
-      let quickSearch = query[1].match(regex);
-
-      if(quickSearch !== null) {
-        quickSearch.forEach(qs => {
-          query[1] = query[1].replace(qs, '').trim();
-        });
-      }
-      searchCriteria.quickSearch = quickSearch;
-
-    // range-input referer til makspris-slideren
-    // Vi henter verdien, caster til nummer, og oppdaterer teksten
-    // som står til høyre for slideren.
-    } else if(elem.type === 'range') {
-      elem.value = query[1];
-      query[1] = Number(query[1]);
-      updatePriceQuery(elem);
-
-    // Date castes ganske enkelt til en dato
-    } else if(elem.type === 'date') {
-      elem.value = query[1];
-      query[1] = new Date(query[1]);
-
-    // Nummerinput (time, minutt), castes til nummer
-    } else if(elem.type === 'number') {
-      elem.value = query[1];
-      query[1] = Number(query[1]);
-
-      searchCriteria.time = searchCriteria.time || [];
-      searchCriteria.time[elem.id == 'hour' ? 0 : 1] = query[1];
-      return;
-
-    // Hvis inputet ikke kan gjenkjennes hopper vi bare over søket
-    } else {
-      return;
-    }
-
-    searchCriteria[query[0]] = query[1];
-    // F.eks.: searchCriteria['fritekst'] = 'galleriet';
-  });
-
+  if(searchCriteria.quickSearch) {
+    searchCriteria.quickSearch
+      .map(formatQuicksearch)
+      .forEach(q => handleQuery(q, searchCriteria));
+    delete searchCriteria.quickSearch;
+  }
 
   if(searchCriteria.time || searchCriteria.date) {
     var today;
@@ -314,6 +253,79 @@ function getQuery() {
   }
 
   return searchCriteria;
+}
+
+function handleQuery(query, searchCriteria) {
+  // For hvert 'navn-verdi'-par, del opp paret i en array, og
+  // se hvor dataen kom fra. Variabelnavnet skal korrespondere
+  // med ID-en til elementet på siden.
+
+  query = query.split('=');
+  if(query[1] === '') return; // Vi hopper over emptystring queries
+  let elem = document.getElementById(query[0]);
+
+  // Skjekk så hvilken type input variabelen kom fra, dette brukes
+  // til å bestemme hvilken type variabelen skal castes til.
+
+
+  // Checkbox dukker opp kun dersom verdien er sann,
+  // så vi returnerer ganske enkelt true
+  if(elem.type === 'checkbox') {
+    elem.checked = true;
+    query[1] = true;
+
+  // fritekstsøk deles må dekodes fra URI-enkoding,
+  // så må vi dele søket i fritekst og hurtigsøk
+  } else if(elem.type === 'text') {
+    // Vi dekoder URI-enkodingen
+    query[1] = decodeURIComponent(query[1].replace(/[+]/g, ' '));
+    elem.value = query[1];
+
+    let regex = /(?:[^:\s]+):(?:[^:\s])+/g;
+    let quickSearch = query[1].match(regex);
+
+    if(quickSearch !== null) {
+      quickSearch.forEach(qs => {
+        query[1] = query[1].replace(qs, '').trim();
+      });
+    }
+    searchCriteria.quickSearch = quickSearch;
+
+  // range-input referer til makspris-slideren
+  // Vi henter verdien, caster til nummer, og oppdaterer teksten
+  // som står til høyre for slideren.
+  } else if(elem.type === 'range') {
+    elem.value = query[1];
+    query[1] = Number(query[1]);
+    updatePriceQuery(elem);
+
+  // Date castes ganske enkelt til en dato
+  } else if(elem.type === 'date') {
+    elem.value = query[1];
+    query[1] = new Date(query[1]);
+
+  // Nummerinput (time, minutt), castes til nummer
+  } else if(elem.type === 'number') {
+    elem.value = query[1];
+    query[1] = Number(query[1]);
+
+    searchCriteria.time = searchCriteria.time || [];
+    searchCriteria.time[elem.id == 'hour' ? 0 : 1] = query[1];
+    return;
+
+  // Hvis inputet ikke kan gjenkjennes hopper vi bare over søket
+  } else {
+    return;
+  }
+
+  searchCriteria[query[0]] = query[1];
+  // F.eks.: searchCriteria['fritekst'] = 'galleriet';
+}
+
+function formatQuicksearch(q) {
+
+
+  // return [key, value];
 }
 
 function filterMarkers(query, marker) {
@@ -418,12 +430,12 @@ function parseTimeRange(time) {
   return time; // f.eks: [[0, 30], [23, 59]]
 }
 
-/*
+  /*
   @Author Sunniva Lode
 */
 function checkQuickSearch(q, marker) {
   // Hvis ingen quicksearch eller ugyldig format, ignorer søket
-  if(!q || !q.match(/:/)) return true;
+  if(!q || !q.match(/.:./)) return true;
 
   query = q.split(':');
   let criteria = query[0];
